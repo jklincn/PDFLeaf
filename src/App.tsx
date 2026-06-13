@@ -10,6 +10,10 @@ import pageDownIcon from "pdfjs-dist/web/images/toolbarButton-pageDown.svg?url";
 import pageUpIcon from "pdfjs-dist/web/images/toolbarButton-pageUp.svg?url";
 import zoomInIcon from "pdfjs-dist/web/images/toolbarButton-zoomIn.svg?url";
 import zoomOutIcon from "pdfjs-dist/web/images/toolbarButton-zoomOut.svg?url";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import "pdfjs-dist/web/pdf_viewer.css";
 import "./App.css";
 
@@ -391,17 +395,17 @@ function App() {
           <span className="brand-mark">PDF</span>
           <div>
             <h1>PDFLeaf</h1>
-            <p>本地 PDF 预览</p>
+            <p>PDF 页面编辑器</p>
           </div>
         </div>
 
-        <button className="primary-action" type="button" onClick={choosePdf} disabled={isLoading}>
+        <Button className="primary-action" type="button" onClick={choosePdf} disabled={isLoading}>
           {isLoading ? "正在打开..." : "选择 PDF 文件"}
-        </button>
-        <label className="field-label" htmlFor="pdf-path">
+        </Button>
+        <Label className="field-label" htmlFor="pdf-path">
           文件路径
-        </label>
-        <input
+        </Label>
+        <Input
           id="pdf-path"
           className="path-input"
           value={filePath}
@@ -428,7 +432,9 @@ function App() {
 
       <section className="viewer" aria-label="PDF 预览">
         <div className="viewer-toolbar" aria-label="PDF 阅读控制">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             className="toolbar-button icon-button"
             type="button"
             onClick={goPreviousPage}
@@ -436,8 +442,10 @@ function App() {
             title="上一页"
           >
             <img className="toolbar-icon" src={pageUpIcon} alt="" aria-hidden="true" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className="toolbar-button icon-button"
             type="button"
             onClick={goNextPage}
@@ -445,9 +453,9 @@ function App() {
             title="下一页"
           >
             <img className="toolbar-icon" src={pageDownIcon} alt="" aria-hidden="true" />
-          </button>
+          </Button>
           <div className="page-control">
-            <input
+            <Input
               className="page-input"
               value={pageInput}
               inputMode="numeric"
@@ -460,7 +468,9 @@ function App() {
             <span className="page-total">/ {pageCount || "-"}</span>
           </div>
           <span className="toolbar-divider" aria-hidden="true" />
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             className="toolbar-button icon-button"
             type="button"
             onClick={zoomOut}
@@ -468,8 +478,10 @@ function App() {
             title="缩小"
           >
             <img className="toolbar-icon" src={zoomOutIcon} alt="" aria-hidden="true" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className="toolbar-button icon-button"
             type="button"
             onClick={zoomIn}
@@ -477,15 +489,15 @@ function App() {
             title="放大"
           >
             <img className="toolbar-icon" src={zoomInIcon} alt="" aria-hidden="true" />
-          </button>
-          <select className="zoom-select" value={scaleValue} onChange={handleScaleSelect} disabled={!canPreview} aria-label="缩放比例">
+          </Button>
+          <NativeSelect className="zoom-select" value={scaleValue} onChange={handleScaleSelect} disabled={!canPreview} aria-label="缩放比例">
             {scaleValue.startsWith("custom:") && <option value={scaleValue}>{Math.round(scale * 100)}%</option>}
             {ZOOM_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
 
         <div className={canPreview ? "viewer-container" : "viewer-container viewer-container-empty"} ref={viewerContainerRef} onWheel={handlePreviewWheel}>
