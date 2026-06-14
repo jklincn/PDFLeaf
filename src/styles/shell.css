@@ -8,32 +8,81 @@
 }
 
 .app-topbar {
-  height: 58px;
-  flex: 0 0 58px;
+  height: 42px;
+  flex: 0 0 42px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 24px;
-  padding: 0 18px;
+  justify-content: space-between;
+  gap: 0;
+  padding: 0 0 0 14px;
   border-bottom: 1px solid #111820;
   color: #f8fafc;
   background: linear-gradient(180deg, #20272f 0%, #171d23 100%);
+  user-select: none;
+}
+
+.app-titlebar-drag-region {
+  min-width: 0;
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
 }
 
 .app-brand {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   min-width: 200px;
-  font-size: 1.1rem;
+  font-size: 0.98rem;
   letter-spacing: 0;
 }
 
 .app-brand img {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   display: block;
   object-fit: contain;
+}
+
+.window-controls {
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.window-control-button {
+  width: 46px;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  color: #d9e2ec;
+  background: transparent;
+  cursor: default;
+}
+
+.window-control-button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.window-control-button:focus-visible {
+  outline: 2px solid rgba(148, 197, 255, 0.9);
+  outline-offset: -2px;
+}
+
+.window-control-button svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+}
+
+.window-control-close:hover {
+  color: #ffffff;
+  background: #c42b1c;
 }
 
 
