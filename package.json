@@ -4,8 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "sync-pdfjs-assets": "node scripts/sync-pdfjs-assets.mjs",
+    "dev": "pnpm sync-pdfjs-assets && vite",
+    "build": "pnpm sync-pdfjs-assets && tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri"
   },
