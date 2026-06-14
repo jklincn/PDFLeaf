@@ -14,7 +14,6 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import * as pdfjsLib from "pdfjs-dist";
 import type { PDFDocumentLoadingTask, PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist/types/src/display/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, DragEvent, MouseEvent, WheelEvent as ReactWheelEvent } from "react";
@@ -22,12 +21,21 @@ import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import appIconUrl from "../src-tauri/icons/icon.png";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
-import "pdfjs-dist/web/pdf_viewer.css";
 import "./App.css";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+let pdfjsLibPromise: Promise<typeof import("pdfjs-dist")> | null = null;
+
+async function getPdfjsLib() {
+  if (!pdfjsLibPromise) {
+    pdfjsLibPromise = import("pdfjs-dist");
+    const pdfjsLib = await pdfjsLibPromise;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+  }
+  return pdfjsLibPromise;
+}
 
 const THUMBNAIL_WIDTH = 144;
+const THUMBNAIL_MAX_HEIGHT = 196;
 const EXPORT_PAGE_PREVIEW_MAX_WIDTH = 170;
 const EXPORT_PAGE_PREVIEW_MAX_HEIGHT = 170;
 const PREVIEW_MIN_SCALE = 0.45;
@@ -194,8 +202,14 @@ type ExportPageContextMenu = {
   y: number;
 };
 
+type ExportFileContextMenu = {
+  fileId: string;
+  x: number;
+  y: number;
+};
+
 const DEFAULT_EXPORT_FILE_ID = "output-default";
-const DEFAULT_EXPORT_FILE_NAME = "新PDF 1";
+const DEFAULT_EXPORT_FILE_NAME = "output.pdf";
 
 function getErrorMessage(cause: unknown) {
   return cause instanceof Error ? cause.message : String(cause);
@@ -209,7 +223,8 @@ function getTimestamp() {
   return new Date().toISOString();
 }
 
-function getPdfDocument(data: Uint8Array<ArrayBufferLike>) {
+async function getPdfDocument(data: Uint8Array<ArrayBufferLike>) {
+  const pdfjsLib = await getPdfjsLib();
   return pdfjsLib.getDocument({
     data,
     cMapPacked: true,
@@ -221,7 +236,7 @@ function getPdfDocument(data: Uint8Array<ArrayBufferLike>) {
 
 async function renderPageThumbnail(page: PDFPageProxy) {
   const baseViewport = page.getViewport({ scale: 1 });
-  const scale = THUMBNAIL_WIDTH / baseViewport.width;
+  const scale = Math.min(THUMBNAIL_WIDTH / baseViewport.width, THUMBNAIL_MAX_HEIGHT / baseViewport.height);
   const viewport = page.getViewport({ scale });
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
@@ -258,8 +273,6 @@ function getExportPagePreviewStyle(source: SourcePage, rotation: number) {
   return {
     "--page-frame-width": `${rotatedWidth * scale}px`,
     "--page-frame-height": `${rotatedHeight * scale}px`,
-    "--page-image-width": `${source.pageWidth * scale}px`,
-    "--page-image-height": `${source.pageHeight * scale}px`,
     "--page-rotation": `${normalizedRotation}deg`,
   } as CSSProperties;
 }
@@ -328,11 +341,12 @@ function App() {
   const [previewTarget, setPreviewTarget] = useState<PreviewTarget | null>(null);
   const [fileContextMenu, setFileContextMenu] = useState<FileContextMenu | null>(null);
   const [exportPageContextMenu, setExportPageContextMenu] = useState<ExportPageContextMenu | null>(null);
+  const [exportFileContextMenu, setExportFileContextMenu] = useState<ExportFileContextMenu | null>(null);
   const [draggedExportPageId, setDraggedExportPageId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [error, setError] = useState("");
   const [statusMessage, setStatusMessage] = useState("导入 PDF 后，在页面库中选择页面并添加到导出文件");
-
   useEffect(() => {
     const preventContextMenu = (event: Event) => {
       event.preventDefault();
@@ -348,6 +362,7 @@ function App() {
     const closeContextMenu = () => {
       setFileContextMenu(null);
       setExportPageContextMenu(null);
+      setExportFileContextMenu(null);
     };
 
     window.addEventListener("contextmenu", preventContextMenu);
@@ -407,11 +422,16 @@ function App() {
   );
 
   const renderImportedPdf = useCallback(
-    async (path: string) => {
-      const data = await readFile(path);
-      const loadingTask = getPdfDocument(data);
-      loadingTasksRef.current.push(loadingTask);
-      const pdf = await loadingTask.promise;
+    async (path: string, options?: { pdf: PDFDocumentProxy; onPageProgress?: () => void }) => {
+      let pdf = options?.pdf;
+
+      if (!pdf) {
+        const data = await readFile(path);
+        const loadingTask = await getPdfDocument(data);
+        loadingTasksRef.current.push(loadingTask);
+        pdf = await loadingTask.promise;
+      }
+
       const documentId = createId("doc");
       const documentName = getFileName(path);
       const pages: SourcePage[] = [];
@@ -419,6 +439,7 @@ function App() {
       for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
         const page = await pdf.getPage(pageNumber);
         const { thumbnailUrl, pageWidth, pageHeight } = await renderPageThumbnail(page);
+        options?.onPageProgress?.();
         pages.push({
           id: createId("source-page"),
           documentId,
@@ -462,10 +483,47 @@ function App() {
         return;
       }
 
+      // 过滤掉已导入的文件
+      const existingPaths = new Set(importedPdfs.map((pdf) => pdf.path));
+      const newPaths = selectedPaths.filter((p) => !existingPaths.has(p));
+
+      if (newPaths.length === 0) {
+        setStatusMessage("所选文件均已导入");
+        return;
+      }
+
+      if (newPaths.length < selectedPaths.length) {
+        setStatusMessage(`${selectedPaths.length - newPaths.length} 个文件已存在，跳过`);
+      }
+
+      // 第一遍：读取文件，获取总页数
+      const pdfInfos: Array<{ path: string; pdf: PDFDocumentProxy; loadingTask: PDFDocumentLoadingTask }> = [];
+
+      for (const path of newPaths) {
+        const data = await readFile(path);
+        const loadingTask = await getPdfDocument(data);
+        loadingTasksRef.current.push(loadingTask);
+        const pdf = await loadingTask.promise;
+        pdfInfos.push({ path, pdf, loadingTask });
+      }
+
+      const totalPages = pdfInfos.reduce((sum, info) => sum + info.pdf.numPages, 0);
+      let renderedPages = 0;
+      setImportProgress({ current: 0, total: totalPages });
+
       const nextPdfs: ImportedPdf[] = [];
 
-      for (const path of selectedPaths) {
-        nextPdfs.push(await renderImportedPdf(path));
+      for (const { path, pdf } of pdfInfos) {
+        const onPageProgress = () => {
+          renderedPages += 1;
+
+          if (renderedPages % 3 === 0 || renderedPages === totalPages) {
+            setImportProgress({ current: renderedPages, total: totalPages });
+            setStatusMessage(`正在导入... ${renderedPages}/${totalPages} 页`);
+          }
+        };
+
+        nextPdfs.push(await renderImportedPdf(path, { pdf, onPageProgress }));
       }
 
       setImportedPdfs((current) => [...current, ...nextPdfs]);
@@ -488,8 +546,9 @@ function App() {
       setError(`导入失败：${getErrorMessage(cause)}`);
     } finally {
       setIsImporting(false);
+      setImportProgress(null);
     }
-  }, [activeImportedPdfId, renderImportedPdf]);
+  }, [activeImportedPdfId, importedPdfs, renderImportedPdf]);
 
   const selectImportedPdf = useCallback((documentId: string) => {
     setActiveImportedPdfId(documentId);
@@ -498,14 +557,50 @@ function App() {
 
   const createExportFile = useCallback(() => {
     const outputFileId = createId("output");
-    const outputFileName = `新PDF ${exportFiles.length + 1}`;
-    const nextFile: ExportFile = {
-      id: outputFileId,
-      name: outputFileName,
-      pages: [],
-    };
 
-    setExportFiles((current) => [...current, nextFile]);
+    // 收集当前已使用的编号
+    const usedNums: number[] = [];
+    let hasDefault = false;
+
+    for (const file of exportFiles) {
+      if (file.name === DEFAULT_EXPORT_FILE_NAME) {
+        hasDefault = true;
+      } else {
+        const m = file.name.match(/^output(\d+)\.pdf$/);
+        if (m) {
+          usedNums.push(parseInt(m[1], 10));
+        }
+      }
+    }
+
+    // 如果存在 output.pdf，重命名为最小的未使用编号
+    let renameNum = 1;
+    while (usedNums.includes(renameNum)) renameNum++;
+
+    if (hasDefault) {
+      usedNums.push(renameNum);
+    }
+
+    // 新文件取下一个未使用的编号
+    let nextNum = 1;
+    while (usedNums.includes(nextNum)) nextNum++;
+    const newFileName = `output${nextNum}.pdf`;
+
+    setExportFiles((current) => {
+      let updated = current;
+
+      if (hasDefault) {
+        updated = current.map((f) =>
+          f.name === DEFAULT_EXPORT_FILE_NAME ? { ...f, name: `output${renameNum}.pdf` } : f,
+        );
+      }
+
+      return [
+        ...updated,
+        { id: outputFileId, name: newFileName, pages: [] },
+      ];
+    });
+
     setActiveExportFileId(outputFileId);
     setSelectedExportPageIds([]);
     setCompletionSnapshot(null);
@@ -514,12 +609,48 @@ function App() {
       {
         type: "create_output",
         outputFileId,
-        outputFileName,
+        outputFileName: newFileName,
         timestamp: getTimestamp(),
       },
     ]);
-    setStatusMessage(`已创建 ${outputFileName}`);
-  }, [createId, exportFiles.length]);
+    setStatusMessage(`已创建 ${newFileName}`);
+  }, [createId, exportFiles]);
+
+  const deleteExportFile = useCallback(
+    (fileId: string) => {
+      setExportFileContextMenu(null);
+
+      if (exportFiles.length <= 1) {
+        return;
+      }
+
+      const removedFile = exportFiles.find((f) => f.id === fileId);
+
+      if (!removedFile) {
+        return;
+      }
+
+      setExportFiles((current) => {
+        const remaining = current.filter((f) => f.id !== fileId);
+
+        if (remaining.length === 1) {
+          return remaining.map((f) => ({ ...f, name: DEFAULT_EXPORT_FILE_NAME }));
+        }
+
+        return remaining.map((f, i) => ({ ...f, name: `output${i + 1}.pdf` }));
+      });
+
+      if (activeExportFileId === fileId) {
+        const nextFile = exportFiles.find((f) => f.id !== fileId);
+        setActiveExportFileId(nextFile?.id ?? "");
+        setSelectedExportPageIds([]);
+      }
+
+      setCompletionSnapshot(null);
+      setStatusMessage(`已删除 ${removedFile.name}`);
+    },
+    [exportFiles, activeExportFileId],
+  );
 
   const deleteImportedPdf = useCallback(
     (documentId: string) => {
@@ -633,7 +764,6 @@ function App() {
               timestamp: getTimestamp(),
             })),
           ]);
-          setSelectedExportPageIds(nextPages.map((page) => page.id));
           setStatusMessage(`已添加 ${nextPages.length} 页到 ${file.name}`);
           setCompletionSnapshot(null);
 
@@ -830,6 +960,18 @@ function App() {
         </div>
       </section>
 
+      {importProgress && (
+        <div className="import-progress-overlay">
+          <div className="import-progress-dialog">
+            <div className="import-progress-label">正在导入 PDF...</div>
+            <div className="import-progress-track">
+              <div className="import-progress-fill" style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }} />
+            </div>
+            <div className="import-progress-info">{importProgress.current} / {importProgress.total} 页</div>
+          </div>
+        </div>
+      )}
+
       <div className="workspace">
         <aside className="import-rail" aria-label="已导入文件">
           <div className="rail-heading">
@@ -878,16 +1020,6 @@ function App() {
           <header className="panel-header">
             <div>
               <h1>页面库</h1>
-              {activeImportedPdf ? (
-                <p className="library-meta">
-                  <span className="library-file-name" title={activeImportedPdf.name}>
-                    {activeImportedPdf.name}
-                  </span>
-                  <span className="library-page-count">共 {sourcePages.length} 页，已选择 {selectedSourcePages.length} 页</span>
-                </p>
-              ) : (
-                <p>导入 PDF 后会显示分页缩略图</p>
-              )}
             </div>
             <div className="panel-actions">
               <Button type="button" variant="outline" onClick={exportAllSourcePages} disabled={sourcePages.length === 0 || !activeExportFile}>
@@ -920,7 +1052,7 @@ function App() {
                     onDoubleClick={() => setPreviewTarget({ source: page, rotation: 0 })}
                     aria-pressed={isSelected}
                   >
-                    <span className="thumb-image-wrap">
+                    <span className="thumb-image-wrap" style={{ aspectRatio: `${page.pageWidth} / ${page.pageHeight}` }}>
                       <img src={page.thumbnailUrl} alt={`${page.documentName} 第 ${page.pageNumber} 页`} />
                       {isSelected && (
                         <span className="selection-check">
@@ -942,11 +1074,6 @@ function App() {
           <header className="panel-header">
             <div>
               <h2>导出文件</h2>
-              <p>
-                {activeExportFile
-                  ? `${activeExportFile.name} · ${activeExportPages.length} 页，可拖拽排序`
-                  : "创建新 PDF 文件后，从页面库导入页面"}
-              </p>
             </div>
             <div className="panel-actions">
               <Button type="button" variant="outline" onClick={createExportFile}>
@@ -967,6 +1094,17 @@ function App() {
                     setActiveExportFileId(file.id);
                     setSelectedExportPageIds([]);
                   }}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setExportFileContextMenu({
+                      fileId: file.id,
+                      x: event.clientX,
+                      y: event.clientY,
+                    });
+                    setFileContextMenu(null);
+                    setExportPageContextMenu(null);
+                  }}
                 >
                   <FileText aria-hidden="true" />
                   <span>{file.name}</span>
@@ -976,7 +1114,14 @@ function App() {
             </div>
           )}
 
-          <div className={activeExportPages.length === 0 ? "thumbnail-grid export-grid thumbnail-grid-empty" : "thumbnail-grid export-grid"}>
+          <div
+            className={activeExportPages.length === 0 ? "thumbnail-grid export-grid thumbnail-grid-empty" : "thumbnail-grid export-grid"}
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                setSelectedExportPageIds([]);
+              }
+            }}
+          >
             {activeExportPages.length === 0 ? (
               <div className="empty-state">
                 <Plus aria-hidden="true" />
@@ -1098,6 +1243,22 @@ function App() {
         </div>
       )}
 
+      {exportFileContextMenu && (
+        <div className="file-context-menu" style={{ left: exportFileContextMenu.x, top: exportFileContextMenu.y }} role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            disabled={exportFiles.length <= 1}
+            onClick={() => {
+              deleteExportFile(exportFileContextMenu.fileId);
+            }}
+          >
+            <Trash2 aria-hidden="true" />
+            删除文件
+          </button>
+        </div>
+      )}
+
       {previewTarget && <PreviewModal target={previewTarget} importedPdfs={importedPdfs} onClose={() => setPreviewTarget(null)} />}
     </main>
   );
@@ -1120,10 +1281,14 @@ function PreviewModal({
     offsetX: number;
     offsetY: number;
   } | null>(null);
+  const [pageNum, setPageNum] = useState(target.source.pageNumber);
   const [scale, setScale] = useState(1);
   const [zoomValue, setZoomValue] = useState("page-width");
   const [rotation, setRotation] = useState(target.rotation);
   const [error, setError] = useState("");
+
+  const sourcePdf = importedPdfs.find((pdf) => pdf.id === target.source.documentId) ?? null;
+  const totalPages = sourcePdf?.pageCount ?? 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -1131,14 +1296,13 @@ function PreviewModal({
     async function renderPreview() {
       const canvas = canvasRef.current;
       const context = canvas?.getContext("2d");
-      const sourcePdf = importedPdfs.find((pdf) => pdf.id === target.source.documentId);
 
       if (!canvas || !context || !sourcePdf) {
         return;
       }
 
       try {
-        const page = await sourcePdf.pdf.getPage(target.source.pageNumber);
+        const page = await sourcePdf.pdf.getPage(pageNum);
         const baseViewport = page.getViewport({ scale: 1, rotation });
         const parsedScale = Number(zoomValue);
         const fitWidthScale = Math.max(PREVIEW_MIN_SCALE, 760 / baseViewport.width);
@@ -1216,12 +1380,32 @@ function PreviewModal({
     return () => {
       cancelled = true;
     };
-  }, [importedPdfs, rotation, target.source.documentId, target.source.pageNumber, zoomValue]);
+  }, [importedPdfs, rotation, sourcePdf, pageNum, zoomValue]);
 
   const changeZoom = useCallback((nextScale: number) => {
     const clampedScale = Math.min(PREVIEW_MAX_SCALE, Math.max(PREVIEW_MIN_SCALE, nextScale));
     setZoomValue(String(Number(clampedScale.toFixed(2))));
   }, []);
+
+  const goToPage = useCallback(
+    (nextPageNum: number) => {
+      if (nextPageNum < 1 || nextPageNum > totalPages) {
+        return;
+      }
+
+      setPageNum(nextPageNum);
+      setZoomValue("page-width");
+      setRotation(0);
+      setScale(1);
+      zoomAnchorRef.current = null;
+
+      if (previewScrollRef.current) {
+        previewScrollRef.current.scrollTop = 0;
+        previewScrollRef.current.scrollLeft = 0;
+      }
+    },
+    [totalPages],
+  );
 
   const handlePreviewWheel = useCallback(
     (event: ReactWheelEvent<HTMLDivElement>) => {
@@ -1253,6 +1437,8 @@ function PreviewModal({
     [changeZoom, scale],
   );
 
+  const canPrev = pageNum > 1;
+  const canNext = pageNum < totalPages;
   const canZoomOut = scale > PREVIEW_MIN_SCALE + 0.01;
   const canZoomIn = scale < PREVIEW_MAX_SCALE - 0.01;
 
@@ -1260,17 +1446,17 @@ function PreviewModal({
     <div className="preview-overlay" role="dialog" aria-modal="true" aria-label="预览">
       <div className="preview-window">
         <header className="preview-titlebar">
-          <span>预览 · {target.source.documentName} · 第 {target.source.pageNumber} 页</span>
+          <span>预览 · {sourcePdf?.name ?? target.source.documentName} · 第 {pageNum} 页</span>
           <button type="button" onClick={onClose} aria-label="关闭预览">
             <X aria-hidden="true" />
           </button>
         </header>
         <div className="preview-toolbar">
-          <button type="button" title="上一页" disabled>
+          <button type="button" title="上一页" disabled={!canPrev} onClick={() => goToPage(pageNum - 1)}>
             <ChevronLeft aria-hidden="true" />
           </button>
-          <span className="preview-page-number">{target.source.pageNumber} / {target.source.pageNumber}</span>
-          <button type="button" title="下一页" disabled>
+          <span className="preview-page-number">{pageNum} / {totalPages}</span>
+          <button type="button" title="下一页" disabled={!canNext} onClick={() => goToPage(pageNum + 1)}>
             <ChevronRight aria-hidden="true" />
           </button>
           <span className="preview-divider" />
