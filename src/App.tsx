@@ -4,6 +4,7 @@ import type { PDFDocumentLoadingTask, PDFDocumentProxy } from "pdfjs-dist/types/
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { AppTopbar } from "@/components/AppTopbar";
+import { ExportDialog } from "@/components/ExportDialog";
 import { ExportPanel } from "@/components/ExportPanel";
 import { ImportProgressDialog } from "@/components/ImportProgressDialog";
 import { ImportRail } from "@/components/ImportRail";
@@ -16,7 +17,6 @@ import {
 } from "@/constants/pdf-workspace";
 import { getPdfDocument, renderPageThumbnail } from "@/lib/pdf";
 import {
-  buildCompletionSnapshot,
   getErrorMessage,
   getFileName,
   getTimestamp,
@@ -52,7 +52,7 @@ function App() {
   ]);
   const [activeExportFileId, setActiveExportFileId] = useState(DEFAULT_EXPORT_FILE_ID);
   const [selectedExportPageIds, setSelectedExportPageIds] = useState<string[]>([]);
-  const [operations, setOperations] = useState<OperationRecord[]>(() => [
+  const [_operations, setOperations] = useState<OperationRecord[]>(() => [
     {
       type: "create_output",
       outputFileId: DEFAULT_EXPORT_FILE_ID,
@@ -66,6 +66,7 @@ function App() {
   const [exportPageContextMenu, setExportPageContextMenu] = useState<ExportPageContextMenu | null>(null);
   const [exportFileContextMenu, setExportFileContextMenu] = useState<ExportFileContextMenu | null>(null);
   const [draggedExportPageId, setDraggedExportPageId] = useState<string | null>(null);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
   const [error, setError] = useState("");
@@ -674,12 +675,8 @@ function App() {
       setStatusMessage("输出文件中还没有页面");
       return;
     }
-
-    const { snapshot, completeRecord } = buildCompletionSnapshot(exportFiles, operations);
-    setOperations((current) => [...current, completeRecord]);
-    setCompletionSnapshot(snapshot);
-    setStatusMessage(`已生成 ${snapshot.outputFileCount} 个输出文件的操作记录`);
-  }, [exportFiles, operations, totalExportPageCount]);
+    setExportDialogOpen(true);
+  }, [totalExportPageCount]);
 
   const previewSourcePage = useCallback((source: SourcePage, rotation = 0) => {
     setPreviewTarget({ source, rotation });
@@ -768,6 +765,13 @@ function App() {
       />
 
       {previewTarget && <PreviewModal target={previewTarget} importedPdfs={importedPdfs} onClose={() => setPreviewTarget(null)} />}
+
+      <ExportDialog
+        open={exportDialogOpen}
+        exportFiles={exportFiles}
+        importedPdfs={importedPdfs}
+        onClose={() => setExportDialogOpen(false)}
+      />
     </main>
   );
 }

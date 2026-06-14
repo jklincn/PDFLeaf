@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 public/pdfjs-dist/
+src-tauri/binaries/
 
 # Editor directories and files
 .vscode/*

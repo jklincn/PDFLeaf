@@ -1,0 +1,416 @@
+/* ── Overlay ──────────────────────────────────────────────────── */
+
+.export-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(6px);
+  animation: export-overlay-in 0.15s ease-out;
+}
+
+@keyframes export-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Dialog ───────────────────────────────────────────────────── */
+
+.export-dialog {
+  width: 440px;
+  max-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e0e3e7;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.03),
+    0 24px 64px rgba(0, 0, 0, 0.12);
+  animation: export-dialog-in 0.2s ease-out;
+  overflow: hidden;
+}
+
+@keyframes export-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Header ───────────────────────────────────────────────────── */
+
+.export-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.export-dialog-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.export-dialog-title-icon {
+  width: 20px;
+  height: 20px;
+  color: #c8870b;
+  stroke-width: 1.8;
+}
+
+.export-dialog-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  letter-spacing: 0.01em;
+}
+
+.export-dialog-close {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  color: #9ca3af;
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.export-dialog-close:hover:not(:disabled) {
+  color: #374151;
+  background: #f3f4f6;
+}
+
+.export-dialog-close:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.export-dialog-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Path section ─────────────────────────────────────────────── */
+
+.export-dialog-path {
+  padding: 16px 20px 12px;
+}
+
+.export-dialog-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.export-dialog-path-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-dialog-path-display {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f9fafb;
+  transition: border-color 0.15s;
+}
+
+.export-dialog-path-display:focus-within {
+  border-color: #d1d5db;
+}
+
+.export-dialog-path-icon {
+  width: 15px;
+  height: 15px;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.export-dialog-path-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: #4b5563;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.export-dialog-change-btn {
+  flex-shrink: 0;
+  padding: 6px 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #374151;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.export-dialog-change-btn:hover:not(:disabled) {
+  color: #111827;
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.export-dialog-change-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ── File list ────────────────────────────────────────────────── */
+
+.export-dialog-summary {
+  padding: 4px 20px 14px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.export-dialog-summary-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.export-dialog-summary-header .export-dialog-label {
+  margin-bottom: 0;
+}
+
+.export-dialog-summary-meta {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  font-variant-numeric: tabular-nums;
+}
+
+.export-dialog-file-list {
+  flex: 1;
+  max-height: 180px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fafbfc;
+}
+
+.export-dialog-file-items {
+  padding: 4px 0;
+}
+
+.export-dialog-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  transition: background 0.1s;
+}
+
+.export-dialog-file-item:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.export-dialog-file-item + .export-dialog-file-item {
+  border-top: 1px solid #f0f1f3;
+}
+
+.export-dialog-file-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.export-dialog-file-pages {
+  font-size: 0.74rem;
+  color: #9ca3af;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+
+/* ── Status sections ──────────────────────────────────────────── */
+
+.export-dialog-status {
+  margin: 0 20px 14px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  animation: export-status-in 0.2s ease-out;
+}
+
+@keyframes export-status-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.export-dialog-status.exporting {
+  background: #fef9ee;
+  border: 1px solid #f5e6c4;
+  color: #9a7507;
+  font-size: 0.84rem;
+  align-items: center;
+}
+
+.export-dialog-status.success {
+  background: #f2faf5;
+  border: 1px solid #c6e6d4;
+}
+
+.export-dialog-status.partial {
+  background: #fefaf2;
+  border: 1px solid #f2ddb0;
+}
+
+.export-dialog-status.error {
+  background: #fef5f4;
+  border: 1px solid #f5cecb;
+}
+
+.export-dialog-spinner {
+  width: 18px;
+  height: 18px;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.export-dialog-status-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.export-dialog-status.success .export-dialog-status-icon {
+  color: #2d9e5e;
+}
+
+.export-dialog-status.partial .export-dialog-status-icon {
+  color: #b8780a;
+}
+
+.export-dialog-status.error .export-dialog-status-icon {
+  color: #c7382e;
+}
+
+.export-dialog-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.export-dialog-status-text strong {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.export-dialog-status-text > span {
+  font-size: 0.76rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.export-dialog-result-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.export-dialog-result-file {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  font-size: 0.72rem;
+  color: #4b5563;
+  font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+  letter-spacing: -0.01em;
+}
+
+.export-dialog-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.export-dialog-warning-item {
+  font-size: 0.72rem;
+  color: #9a7507;
+  line-height: 1.4;
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+
+.export-dialog-footer {
+  padding: 14px 20px 18px;
+  border-top: 1px solid #f0f1f3;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.export-dialog-action-btn {
+  min-width: 100px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: #c8870b;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.export-dialog-action-btn:hover:not(:disabled) {
+  background: #d9981a;
+  box-shadow: 0 2px 12px rgba(180, 120, 20, 0.25);
+}
+
+.export-dialog-action-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.export-dialog-action-btn svg {
+  width: 16px;
+  height: 16px;
+}

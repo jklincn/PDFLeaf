@@ -10,6 +10,16 @@
     "core:window:allow-start-dragging",
     "core:window:allow-toggle-maximize",
     "dialog:allow-open",
-    "fs:allow-read-file"
+    "fs:allow-read-file",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "binaries/qpdf",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    }
   ]
 }

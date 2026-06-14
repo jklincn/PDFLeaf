@@ -47,16 +47,29 @@
   flex: 0 0 44px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
   padding: 6px 12px;
   color: #e7edf5;
   background: #2a3139;
   border-bottom: 1px solid #171d24;
 }
 
-.preview-toolbar-spacer {
+.preview-toolbar-left {
   flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.preview-toolbar-center {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.preview-toolbar-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .preview-toolbar select {

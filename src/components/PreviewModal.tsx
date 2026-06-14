@@ -211,53 +211,57 @@ export function PreviewModal({ target, importedPdfs, onClose }: PreviewModalProp
     <div className="preview-overlay" role="dialog" aria-modal="true" aria-label="预览">
       <div className="preview-window">
         <div className="preview-toolbar">
-          <button type="button" title="上一页" disabled={!canPrev} onClick={() => goToPage(pageNum - 1)}>
-            <ChevronLeft aria-hidden="true" />
-          </button>
-          <span className="preview-page-number">
-            {pageNum} / {totalPages}
-          </span>
-          <button type="button" title="下一页" disabled={!canNext} onClick={() => goToPage(pageNum + 1)}>
-            <ChevronRight aria-hidden="true" />
-          </button>
-          <span className="preview-divider" />
-          <button type="button" onClick={() => changeZoom(scale - 0.15)} disabled={!canZoomOut} title="缩小">
-            <ZoomOut aria-hidden="true" />
-          </button>
-          <button type="button" onClick={() => changeZoom(scale + 0.15)} disabled={!canZoomIn} title="放大">
-            <ZoomIn aria-hidden="true" />
-          </button>
-          <NativeSelect
-            value={zoomValue}
-            onChange={(event) => {
-              const nextValue = event.currentTarget.value;
+          <div className="preview-toolbar-left" />
+          <div className="preview-toolbar-center">
+            <button type="button" title="上一页" disabled={!canPrev} onClick={() => goToPage(pageNum - 1)}>
+              <ChevronLeft aria-hidden="true" />
+            </button>
+            <span className="preview-page-number">
+              {pageNum} / {totalPages}
+            </span>
+            <button type="button" title="下一页" disabled={!canNext} onClick={() => goToPage(pageNum + 1)}>
+              <ChevronRight aria-hidden="true" />
+            </button>
+            <span className="preview-divider" />
+            <button type="button" onClick={() => changeZoom(scale - 0.15)} disabled={!canZoomOut} title="缩小">
+              <ZoomOut aria-hidden="true" />
+            </button>
+            <button type="button" onClick={() => changeZoom(scale + 0.15)} disabled={!canZoomIn} title="放大">
+              <ZoomIn aria-hidden="true" />
+            </button>
+            <NativeSelect
+              value={zoomValue}
+              onChange={(event) => {
+                const nextValue = event.currentTarget.value;
 
-              if (nextValue === "auto" || nextValue === "page-actual" || nextValue === "page-fit" || nextValue === "page-width") {
-                setZoomValue(nextValue);
-                return;
-              }
+                if (nextValue === "auto" || nextValue === "page-actual" || nextValue === "page-fit" || nextValue === "page-width") {
+                  setZoomValue(nextValue);
+                  return;
+                }
 
-              const nextScale = Number(nextValue);
-              setZoomValue(String(Math.min(PREVIEW_MAX_SCALE, Math.max(PREVIEW_MIN_SCALE, Number.isFinite(nextScale) ? nextScale : 1))));
-            }}
-            aria-label="缩放比例"
-          >
-            {zoomValue !== "page-width" && !ZOOM_OPTIONS.some((option) => option.value === zoomValue) && (
-              <option value={zoomValue}>{Math.round(scale * 100)}%</option>
-            )}
-            {ZOOM_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </NativeSelect>
-          <button type="button" onClick={() => setRotation((current) => (current + 90) % 360)} title="旋转">
-            <RotateCw aria-hidden="true" />
-          </button>
-          <span className="preview-toolbar-spacer" />
-          <button type="button" onClick={onClose} aria-label="关闭预览" title="关闭">
-            <X aria-hidden="true" />
-          </button>
+                const nextScale = Number(nextValue);
+                setZoomValue(String(Math.min(PREVIEW_MAX_SCALE, Math.max(PREVIEW_MIN_SCALE, Number.isFinite(nextScale) ? nextScale : 1))));
+              }}
+              aria-label="缩放比例"
+            >
+              {zoomValue !== "page-width" && !ZOOM_OPTIONS.some((option) => option.value === zoomValue) && (
+                <option value={zoomValue}>{Math.round(scale * 100)}%</option>
+              )}
+              {ZOOM_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <button type="button" onClick={() => setRotation((current) => (current + 90) % 360)} title="旋转">
+              <RotateCw aria-hidden="true" />
+            </button>
+          </div>
+          <div className="preview-toolbar-right">
+            <button type="button" onClick={onClose} aria-label="关闭预览" title="关闭">
+              <X aria-hidden="true" />
+            </button>
+          </div>
         </div>
         <div className="preview-canvas-wrap" ref={previewScrollRef} onWheel={handlePreviewWheel}>
           {error ? <p className="preview-error">{error}</p> : <canvas ref={canvasRef} aria-label="PDF 页面预览" />}
