@@ -1,0 +1,47 @@
+﻿.app-shell {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #eef1f5;
+}
+
+.app-topbar {
+  height: 58px;
+  flex: 0 0 58px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 24px;
+  padding: 0 18px;
+  border-bottom: 1px solid #111820;
+  color: #f8fafc;
+  background: linear-gradient(180deg, #20272f 0%, #171d23 100%);
+}
+
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 200px;
+  font-size: 1.1rem;
+  letter-spacing: 0;
+}
+
+.app-brand img {
+  width: 22px;
+  height: 22px;
+  display: block;
+  object-fit: contain;
+}
+
+
+.workspace {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 230px minmax(310px, 0.92fr) minmax(440px, 1.45fr);
+  overflow: hidden;
+}
+

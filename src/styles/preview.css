@@ -1,0 +1,125 @@
+﻿.preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 34px;
+  background: rgba(9, 12, 16, 0.5);
+}
+
+.preview-window {
+  width: min(780px, calc(100vw - 42px));
+  height: min(780px, calc(100vh - 42px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #0d1116;
+  border-radius: 4px;
+  background: #20252b;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.36);
+}
+
+.preview-titlebar {
+  height: 38px;
+  flex: 0 0 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px 0 14px;
+  color: #f8fafc;
+  background: #20262d;
+  border-bottom: 1px solid #111820;
+  font-size: 0.86rem;
+}
+
+.preview-titlebar span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-titlebar button,
+.preview-toolbar button {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 3px;
+  color: #e5edf7;
+  background: transparent;
+}
+
+.preview-titlebar button:hover,
+.preview-toolbar button:hover:not(:disabled) {
+  background: #343c46;
+}
+
+.preview-titlebar svg,
+.preview-toolbar svg {
+  width: 16px;
+  height: 16px;
+}
+
+.preview-toolbar {
+  height: 44px;
+  flex: 0 0 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 6px 12px;
+  color: #e7edf5;
+  background: #2a3139;
+  border-bottom: 1px solid #171d24;
+}
+
+.preview-toolbar select {
+  width: 118px;
+  height: 30px;
+  border-color: #454f5a;
+  color: #f8fafc;
+  background: #20262d;
+}
+
+.preview-page-number {
+  min-width: 66px;
+  color: #f8fafc;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.preview-divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: #49535f;
+}
+
+.preview-canvas-wrap {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 28px;
+  background: #565d66;
+}
+
+.preview-canvas-wrap canvas {
+  display: block;
+  margin: 0 auto;
+  background: #ffffff;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+}
+
+.preview-error {
+  margin: auto;
+  padding: 18px;
+  border-radius: 5px;
+  color: #8a1f1f;
+  background: #fff0f0;
+}
