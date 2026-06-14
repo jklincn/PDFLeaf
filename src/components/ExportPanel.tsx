@@ -227,6 +227,7 @@ export function ExportPanel({
                     .join(" ")}
                   key={page.id}
                   data-export-page-id={page.id}
+                  style={previewStyle}
                   onContextMenu={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -248,18 +249,15 @@ export function ExportPanel({
                     onDoubleClick={() => onPreviewPage(page.source, page.rotation)}
                     aria-pressed={isSelected}
                   >
-                    <span className="export-page-frame" style={previewStyle}>
+                    <span className="export-page-frame">
                       <img src={page.source.thumbnailUrl} alt={`导出第 ${index + 1} 页`} draggable={false} />
                     </span>
                   </button>
                   <div className="export-card-meta">
-                    <span>{index + 1}</span>
-                    <small>
-                      {page.source.documentName} · {page.source.pageNumber}
-                    </small>
                     <button type="button" onClick={() => onRotateExportPages([page.id])} title="旋转">
                       <RotateCw aria-hidden="true" />
                     </button>
+                    <span>{index + 1}</span>
                     <button type="button" onClick={() => onRemoveExportPages([page.id])} title="删除">
                       <X aria-hidden="true" />
                     </button>

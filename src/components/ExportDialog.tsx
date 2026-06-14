@@ -168,7 +168,7 @@ export function ExportDialog({
         <div className="export-dialog-summary">
           <div className="export-dialog-summary-header">
             <span className="export-dialog-label">
-              导出文件 ({nonEmptyFiles.length})
+              导出文件
             </span>
             <span className="export-dialog-summary-meta">
               共 {totalPages} 页

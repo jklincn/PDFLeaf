@@ -205,6 +205,9 @@
 }
 
 .thumbnail-grid {
+  --thumbnail-column-width: 132px;
+  --thumbnail-frame-width: 118px;
+  --thumbnail-slot-height: 196px;
   width: 100%;
   min-height: 100%;
   padding: 18px 20px 22px;
@@ -298,9 +301,10 @@
 
 .export-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, var(--thumbnail-column-width));
+  justify-content: start;
   align-content: start;
-  gap: 22px 20px;
+  gap: 18px 14px;
 }
 
 .thumbnail-grid-empty {
@@ -317,7 +321,11 @@
 }
 
 .export-card {
+  width: var(--thumbnail-column-width);
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   border: 0;
   background: transparent;
   cursor: grab;
@@ -339,7 +347,24 @@
 }
 
 .export-thumb-button {
-  width: 100%;
+  position: relative;
+  width: var(--thumbnail-column-width);
+  height: var(--thumbnail-slot-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: inherit;
+}
+
+.export-page-frame {
+  position: relative;
+  width: var(--page-frame-width);
+  height: var(--page-frame-height);
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -347,7 +372,6 @@
   border: 1px solid #d5dce6;
   border-radius: 4px;
   background: #ffffff;
-  cursor: inherit;
   box-shadow: 0 1px 2px rgba(18, 28, 40, 0.07);
   transition:
     border-color 0.15s ease,
@@ -355,7 +379,12 @@
     transform 0.15s ease;
 }
 
-.export-card-selected .export-thumb-button {
+.export-card:hover .export-page-frame {
+  border-color: #8ab6f2;
+  box-shadow: 0 6px 18px rgba(31, 117, 226, 0.14);
+}
+
+.export-card-selected .export-page-frame {
   border-color: #1f75e2;
   box-shadow:
     0 0 0 2px #1f75e2,
@@ -363,28 +392,24 @@
 }
 
 .export-thumb-button img {
-  max-width: calc(100% - 20px);
-  max-height: calc(100% - 20px);
   object-fit: contain;
   transition: transform 0.18s ease;
 }
 
 .export-card-meta {
+  width: var(--page-frame-width);
   min-width: 0;
   height: 34px;
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) 24px 24px;
+  grid-template-columns: 24px minmax(0, 1fr) 24px;
   align-items: center;
-  gap: 5px;
   color: #1c232b;
   font-size: 0.82rem;
 }
 
-.export-card-meta small {
-  overflow: hidden;
-  color: #65707d;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.export-card-meta > span {
+  justify-self: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .export-card-meta button {
@@ -399,6 +424,14 @@
   background: transparent;
 }
 
+.export-card-meta button:first-of-type {
+  justify-self: start;
+}
+
+.export-card-meta button:last-of-type {
+  justify-self: end;
+}
+
 .export-card-meta button:hover {
   color: #17202a;
   background: #e8edf4;
@@ -409,23 +442,14 @@
   height: 14px;
 }
 
-.export-page-frame {
-  position: relative;
-  width: var(--page-frame-width);
-  height: var(--page-frame-height);
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: #ffffff;
-}
-
 .export-page-frame img {
-  max-width: calc(100% - 8px);
-  max-height: calc(100% - 8px);
+  width: calc(var(--page-image-width) - 12px);
+  height: calc(var(--page-image-height) - 12px);
+  max-width: none;
+  max-height: none;
   object-fit: contain;
   transform: rotate(var(--page-rotation));
+  transform-origin: center;
   transition: transform 0.18s ease;
 }
 
@@ -457,10 +481,13 @@
 }
 
 .export-drag-preview-frame img {
-  max-width: calc(100% - 8px);
-  max-height: calc(100% - 8px);
+  width: calc(var(--page-image-width) - 12px);
+  height: calc(var(--page-image-height) - 12px);
+  max-width: none;
+  max-height: none;
   object-fit: contain;
   transform: rotate(var(--page-rotation));
+  transform-origin: center;
 }
 
 @keyframes export-drag-preview-in {

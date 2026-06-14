@@ -2,7 +2,8 @@ mod export;
 
 use tauri::{Manager, PhysicalPosition, PhysicalSize};
 
-const INITIAL_WINDOW_SCALE: f64 = 0.8;
+const INITIAL_WINDOW_WIDTH_SCALE: f64 = 0.88;
+const INITIAL_WINDOW_HEIGHT_SCALE: f64 = 0.8;
 
 fn configure_initial_window(app: &tauri::App) -> tauri::Result<()> {
     let Some(window) = app.get_webview_window("main") else {
@@ -12,8 +13,8 @@ fn configure_initial_window(app: &tauri::App) -> tauri::Result<()> {
     if let Some(monitor) = window.primary_monitor()? {
         let monitor_size = monitor.size();
         let monitor_position = monitor.position();
-        let window_width = (f64::from(monitor_size.width) * INITIAL_WINDOW_SCALE).round() as u32;
-        let window_height = (f64::from(monitor_size.height) * INITIAL_WINDOW_SCALE).round() as u32;
+        let window_width = (f64::from(monitor_size.width) * INITIAL_WINDOW_WIDTH_SCALE).round() as u32;
+        let window_height = (f64::from(monitor_size.height) * INITIAL_WINDOW_HEIGHT_SCALE).round() as u32;
         let window_x = monitor_position.x + ((monitor_size.width - window_width) / 2) as i32;
         let window_y = monitor_position.y + ((monitor_size.height - window_height) / 2) as i32;
 

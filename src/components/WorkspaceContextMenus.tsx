@@ -1,4 +1,4 @@
-import { RotateCw, Trash2 } from "lucide-react";
+import { Eraser, RotateCw, Trash2 } from "lucide-react";
 import type {
   ExportFileContextMenu,
   ExportPage,
@@ -14,10 +14,12 @@ type WorkspaceContextMenusProps = {
   contextMenuExportPage: ExportPage | null;
   exportFileContextMenu: ExportFileContextMenu | null;
   exportFileCount: number;
+  contextMenuExportFilePageCount: number;
   onDeleteImportedPdf: (documentId: string) => void;
   onRotateExportPage: (exportPageId: string) => void;
   onRemoveExportPage: (exportPageId: string) => void;
   onDeleteExportFile: (fileId: string) => void;
+  onClearExportFile: (fileId: string) => void;
 };
 
 export function WorkspaceContextMenus({
@@ -27,10 +29,12 @@ export function WorkspaceContextMenus({
   contextMenuExportPage,
   exportFileContextMenu,
   exportFileCount,
+  contextMenuExportFilePageCount,
   onDeleteImportedPdf,
   onRotateExportPage,
   onRemoveExportPage,
   onDeleteExportFile,
+  onClearExportFile,
 }: WorkspaceContextMenusProps) {
   return (
     <>
@@ -47,17 +51,26 @@ export function WorkspaceContextMenus({
         <div className="file-context-menu" style={{ left: exportPageContextMenu.x, top: exportPageContextMenu.y }} role="menu">
           <button type="button" role="menuitem" onClick={() => onRotateExportPage(contextMenuExportPage.id)}>
             <RotateCw aria-hidden="true" />
-            旋转页面
+            旋转
           </button>
           <button type="button" role="menuitem" onClick={() => onRemoveExportPage(contextMenuExportPage.id)}>
             <Trash2 aria-hidden="true" />
-            删除页面
+            删除
           </button>
         </div>
       )}
 
       {exportFileContextMenu && (
         <div className="file-context-menu" style={{ left: exportFileContextMenu.x, top: exportFileContextMenu.y }} role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            disabled={contextMenuExportFilePageCount === 0}
+            onClick={() => onClearExportFile(exportFileContextMenu.fileId)}
+          >
+            <Eraser aria-hidden="true" />
+            清空文件
+          </button>
           <button
             type="button"
             role="menuitem"

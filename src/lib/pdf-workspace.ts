@@ -21,7 +21,7 @@ export function normalizeRotation(rotation: number) {
   return ((rotation % 360) + 360) % 360;
 }
 
-export function getExportPagePreviewStyle(source: SourcePage, rotation: number) {
+function getPageFrameStyle(source: SourcePage, rotation: number) {
   const normalizedRotation = normalizeRotation(rotation);
   const isSideways = normalizedRotation === 90 || normalizedRotation === 270;
   const rotatedWidth = isSideways ? source.pageHeight : source.pageWidth;
@@ -31,8 +31,14 @@ export function getExportPagePreviewStyle(source: SourcePage, rotation: number) 
   return {
     "--page-frame-width": `${rotatedWidth * scale}px`,
     "--page-frame-height": `${rotatedHeight * scale}px`,
+    "--page-image-width": `${source.pageWidth * scale}px`,
+    "--page-image-height": `${source.pageHeight * scale}px`,
     "--page-rotation": `${normalizedRotation}deg`,
   } as CSSProperties;
+}
+
+export function getExportPagePreviewStyle(source: SourcePage, rotation: number) {
+  return getPageFrameStyle(source, rotation);
 }
 
 export function buildCompletionSnapshot(exportFiles: ExportFile[], operations: OperationRecord[]) {

@@ -163,6 +163,10 @@ function App() {
     () => activeExportPages.find((page) => page.id === exportPageContextMenu?.exportPageId) ?? null,
     [activeExportPages, exportPageContextMenu?.exportPageId],
   );
+  const contextMenuExportFilePageCount = useMemo(
+    () => exportFiles.find((file) => file.id === exportFileContextMenu?.fileId)?.pages.length ?? 0,
+    [exportFiles, exportFileContextMenu?.fileId],
+  );
 
   const renderImportedPdf = useCallback(
     async (path: string, options?: { pdf: PDFDocumentProxy; onPageProgress?: () => void }) => {
@@ -406,6 +410,36 @@ function App() {
     [activeExportFileId, exportFiles],
   );
 
+  const clearExportFile = useCallback(
+    (fileId: string) => {
+      setExportFileContextMenu(null);
+
+      const targetFile = exportFiles.find((file) => file.id === fileId);
+
+      if (!targetFile) {
+        return;
+      }
+
+      const pageCount = targetFile.pages.length;
+
+      if (pageCount === 0) {
+        return;
+      }
+
+      setExportFiles((current) =>
+        current.map((file) => (file.id === fileId ? { ...file, pages: [] } : file)),
+      );
+
+      if (activeExportFileId === fileId) {
+        setSelectedExportPageIds([]);
+      }
+
+      setCompletionSnapshot(null);
+      setStatusMessage(`已清空 ${targetFile.name}，共删除 ${pageCount} 页`);
+    },
+    [activeExportFileId, exportFiles],
+  );
+
   const deleteImportedPdf = useCallback(
     (documentId: string) => {
       const removedPdf = importedPdfs.find((pdf) => pdf.id === documentId);
@@ -522,6 +556,7 @@ function App() {
 
   const addSelectedToExport = useCallback(() => {
     addSourcePagesToActiveExport(selectedSourcePages);
+    setSelectedSourcePageIds([]);
   }, [addSourcePagesToActiveExport, selectedSourcePages]);
 
   const exportAllSourcePages = useCallback(() => {
@@ -758,10 +793,12 @@ function App() {
         contextMenuExportPage={contextMenuExportPage}
         exportFileContextMenu={exportFileContextMenu}
         exportFileCount={exportFiles.length}
+        contextMenuExportFilePageCount={contextMenuExportFilePageCount}
         onDeleteImportedPdf={deleteImportedPdf}
         onRotateExportPage={rotateContextMenuPage}
         onRemoveExportPage={removeContextMenuPage}
         onDeleteExportFile={deleteExportFile}
+        onClearExportFile={clearExportFile}
       />
 
       {previewTarget && <PreviewModal target={previewTarget} importedPdfs={importedPdfs} onClose={() => setPreviewTarget(null)} />}
