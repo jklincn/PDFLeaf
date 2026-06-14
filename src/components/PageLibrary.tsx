@@ -1,6 +1,7 @@
 import type { MouseEvent } from "react";
 import { Check, FilePlus2, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SourcePage } from "@/types/pdf-workspace";
 
 type PageLibraryProps = {
@@ -46,42 +47,44 @@ export function PageLibrary({
         </div>
       </header>
 
-      <div className={sourcePages.length === 0 ? "thumbnail-grid source-grid thumbnail-grid-empty" : "thumbnail-grid source-grid"}>
-        {sourcePages.length === 0 ? (
-          <div className="empty-state">
-            <FilePlus2 aria-hidden="true" />
-            <strong>页面库为空</strong>
-            <span>{error || statusMessage}</span>
-          </div>
-        ) : (
-          sourcePages.map((page) => {
-            const isSelected = selectedSourcePageIds.includes(page.id);
+      <ScrollArea className="thumbnail-scroll-area" viewportClassName="thumbnail-scroll-viewport">
+        <div className={sourcePages.length === 0 ? "thumbnail-grid source-grid thumbnail-grid-empty" : "thumbnail-grid source-grid"}>
+          {sourcePages.length === 0 ? (
+            <div className="empty-state">
+              <FilePlus2 aria-hidden="true" />
+              <strong>页面库为空</strong>
+              <span>{error || statusMessage}</span>
+            </div>
+          ) : (
+            sourcePages.map((page) => {
+              const isSelected = selectedSourcePageIds.includes(page.id);
 
-            return (
-              <button
-                className={isSelected ? "page-thumb page-thumb-selected" : "page-thumb"}
-                key={page.id}
-                type="button"
-                onClick={(event) => onToggleSourcePage(page.id, event)}
-                onDoubleClick={() => onPreviewPage(page)}
-                aria-pressed={isSelected}
-              >
-                <span className="thumb-image-wrap" style={{ aspectRatio: `${page.pageWidth} / ${page.pageHeight}` }}>
-                  <img src={page.thumbnailUrl} alt={`${page.documentName} 第 ${page.pageNumber} 页`} />
-                  {isSelected && (
-                    <span className="selection-check">
-                      <Check aria-hidden="true" />
-                    </span>
-                  )}
-                </span>
-                <span className="thumb-caption">
-                  <strong>{page.pageNumber}</strong>
-                </span>
-              </button>
-            );
-          })
-        )}
-      </div>
+              return (
+                <button
+                  className={isSelected ? "page-thumb page-thumb-selected" : "page-thumb"}
+                  key={page.id}
+                  type="button"
+                  onClick={(event) => onToggleSourcePage(page.id, event)}
+                  onDoubleClick={() => onPreviewPage(page)}
+                  aria-pressed={isSelected}
+                >
+                  <span className="thumb-image-wrap" style={{ aspectRatio: `${page.pageWidth} / ${page.pageHeight}` }}>
+                    <img src={page.thumbnailUrl} alt={`${page.documentName} 第 ${page.pageNumber} 页`} />
+                    {isSelected && (
+                      <span className="selection-check">
+                        <Check aria-hidden="true" />
+                      </span>
+                    )}
+                  </span>
+                  <span className="thumb-caption">
+                    <strong>{page.pageNumber}</strong>
+                  </span>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </ScrollArea>
     </section>
   );
 }

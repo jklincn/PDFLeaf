@@ -210,14 +210,6 @@ export function PreviewModal({ target, importedPdfs, onClose }: PreviewModalProp
   return (
     <div className="preview-overlay" role="dialog" aria-modal="true" aria-label="预览">
       <div className="preview-window">
-        <header className="preview-titlebar">
-          <span>
-            预览 · {sourcePdf?.name ?? target.source.documentName} · 第 {pageNum} 页
-          </span>
-          <button type="button" onClick={onClose} aria-label="关闭预览">
-            <X aria-hidden="true" />
-          </button>
-        </header>
         <div className="preview-toolbar">
           <button type="button" title="上一页" disabled={!canPrev} onClick={() => goToPage(pageNum - 1)}>
             <ChevronLeft aria-hidden="true" />
@@ -261,6 +253,10 @@ export function PreviewModal({ target, importedPdfs, onClose }: PreviewModalProp
           </NativeSelect>
           <button type="button" onClick={() => setRotation((current) => (current + 90) % 360)} title="旋转">
             <RotateCw aria-hidden="true" />
+          </button>
+          <span className="preview-toolbar-spacer" />
+          <button type="button" onClick={onClose} aria-label="关闭预览" title="关闭">
+            <X aria-hidden="true" />
           </button>
         </div>
         <div className="preview-canvas-wrap" ref={previewScrollRef} onWheel={handlePreviewWheel}>

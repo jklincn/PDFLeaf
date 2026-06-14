@@ -16,3 +16,8 @@ Skill usage preferences:
 - For React/Vite component structure or performance-sensitive changes, use the `build-web-apps:react-best-practices` skill when relevant.
 - For shadcn/ui components or projects with `components.json`, use the `build-web-apps:shadcn` skill when relevant.
 - Prefer using applicable skills when they exist, rather than relying only on general coding knowledge.
+
+Build verification note:
+- `pnpm.cmd run build` can fail inside the managed sandbox because Vite/esbuild tries to read parent/config paths and reports `Cannot read directory "..": Access is denied` or `Could not resolve "C:\Users\jklin\PDFLeaf\vite.config.ts"`.
+- For build verification, run `pnpm.cmd run build` outside the sandbox / with escalation directly instead of first trying the sandboxed build.
+- Type checking with `.\node_modules\.bin\tsc.CMD --noEmit` works in the sandbox and can be run normally.
