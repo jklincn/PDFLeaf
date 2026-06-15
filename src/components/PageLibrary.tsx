@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import { Check, FilePlus2, FileText, Plus } from "lucide-react";
+import { Check, CheckCheck, FilePlus2, ListFilter, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SourcePage } from "@/types/pdf-workspace";
@@ -8,11 +8,12 @@ type PageLibraryProps = {
   sourcePages: SourcePage[];
   selectedSourcePageIds: string[];
   canAddSelected: boolean;
-  canExportAll: boolean;
+  canSelectAll: boolean;
   statusMessage: string;
   error: string;
   onAddSelectedToExport: () => void;
-  onExportAllSourcePages: () => void;
+  onSelectAllSourcePages: () => void;
+  onAdvancedSelect: () => void;
   onToggleSourcePage: (pageId: string, event: MouseEvent<HTMLButtonElement>) => void;
   onPreviewPage: (page: SourcePage) => void;
 };
@@ -21,11 +22,12 @@ export function PageLibrary({
   sourcePages,
   selectedSourcePageIds,
   canAddSelected,
-  canExportAll,
+  canSelectAll,
   statusMessage,
   error,
   onAddSelectedToExport,
-  onExportAllSourcePages,
+  onSelectAllSourcePages,
+  onAdvancedSelect,
   onToggleSourcePage,
   onPreviewPage,
 }: PageLibraryProps) {
@@ -36,9 +38,13 @@ export function PageLibrary({
           <h1>页面库</h1>
         </div>
         <div className="panel-actions">
-          <Button type="button" variant="outline" onClick={onExportAllSourcePages} disabled={!canExportAll}>
-            <FileText data-icon="inline-start" aria-hidden="true" />
-            导出全部
+          <Button type="button" variant="outline" onClick={onSelectAllSourcePages} disabled={!canSelectAll}>
+            <CheckCheck data-icon="inline-start" aria-hidden="true" />
+            全选
+          </Button>
+          <Button type="button" variant="outline" onClick={onAdvancedSelect} disabled={!canSelectAll}>
+            <ListFilter data-icon="inline-start" aria-hidden="true" />
+            高级选择
           </Button>
           <Button type="button" variant="outline" onClick={onAddSelectedToExport} disabled={!canAddSelected}>
             <Plus data-icon="inline-start" aria-hidden="true" />

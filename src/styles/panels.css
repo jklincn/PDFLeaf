@@ -407,6 +407,42 @@
   font-size: 0.82rem;
 }
 
+.export-card-source {
+  width: var(--page-frame-width);
+  min-width: 0;
+  height: 22px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 8px;
+  white-space: nowrap;
+  text-align: center;
+  color: #1c232b;
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.export-card-source-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1c232b;
+}
+
+.export-card-source-sep {
+  flex: 0 0 auto;
+  margin-right: 0.25em;
+  color: #9ba7b5;
+}
+
+.export-card-source-page {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
 .export-card-meta > span {
   justify-self: center;
   font-variant-numeric: tabular-nums;

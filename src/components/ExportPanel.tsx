@@ -253,6 +253,11 @@ export function ExportPanel({
                       <img src={page.source.thumbnailUrl} alt={`导出第 ${index + 1} 页`} draggable={false} />
                     </span>
                   </button>
+                  <span className="export-card-source" title={`${page.source.documentName}: ${page.source.pageNumber}`}>
+                    <span className="export-card-source-name">{page.source.documentName}</span>
+                    <span className="export-card-source-sep">:</span>
+                    <span className="export-card-source-page">{page.source.pageNumber}</span>
+                  </span>
                   <div className="export-card-meta">
                     <button type="button" onClick={() => onRotateExportPages([page.id])} title="旋转">
                       <RotateCw aria-hidden="true" />

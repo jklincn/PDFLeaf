@@ -4,6 +4,7 @@ import type { PDFDocumentLoadingTask, PDFDocumentProxy } from "pdfjs-dist/types/
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { AppTopbar } from "@/components/AppTopbar";
+import { AdvancedSelectDialog } from "@/components/AdvancedSelectDialog";
 import { ExportDialog } from "@/components/ExportDialog";
 import { ExportPanel } from "@/components/ExportPanel";
 import { ImportProgressDialog } from "@/components/ImportProgressDialog";
@@ -67,6 +68,7 @@ function App() {
   const [exportFileContextMenu, setExportFileContextMenu] = useState<ExportFileContextMenu | null>(null);
   const [draggedExportPageId, setDraggedExportPageId] = useState<string | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [advancedSelectOpen, setAdvancedSelectOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
   const [error, setError] = useState("");
@@ -559,14 +561,21 @@ function App() {
     setSelectedSourcePageIds([]);
   }, [addSourcePagesToActiveExport, selectedSourcePages]);
 
-  const exportAllSourcePages = useCallback(() => {
+  const selectAllSourcePages = useCallback(() => {
     if (sourcePages.length === 0) {
-      setStatusMessage("当前输入文件没有可导出的页面");
+      setStatusMessage("当前输入文件没有可选择的页面");
       return;
     }
 
-    addSourcePagesToActiveExport(sourcePages);
-  }, [addSourcePagesToActiveExport, sourcePages]);
+    const allIds = sourcePages.map((page) => page.id);
+    const allSelected = allIds.every((id) => selectedSourcePageIds.includes(id));
+
+    if (allSelected) {
+      setSelectedSourcePageIds([]);
+    } else {
+      setSelectedSourcePageIds(allIds);
+    }
+  }, [sourcePages, selectedSourcePageIds]);
 
   const rotateExportPages = useCallback(
     (pageIds: string[]) => {
@@ -753,11 +762,12 @@ function App() {
           sourcePages={sourcePages}
           selectedSourcePageIds={selectedSourcePageIds}
           canAddSelected={selectedSourcePages.length > 0 && Boolean(activeExportFile)}
-          canExportAll={sourcePages.length > 0 && Boolean(activeExportFile)}
+          canSelectAll={sourcePages.length > 0 && Boolean(activeExportFile)}
           statusMessage={statusMessage}
           error={error}
           onAddSelectedToExport={addSelectedToExport}
-          onExportAllSourcePages={exportAllSourcePages}
+          onSelectAllSourcePages={selectAllSourcePages}
+          onAdvancedSelect={() => setAdvancedSelectOpen(true)}
           onToggleSourcePage={toggleSourcePage}
           onPreviewPage={(page) => previewSourcePage(page, 0)}
         />
@@ -808,6 +818,13 @@ function App() {
         exportFiles={exportFiles}
         importedPdfs={importedPdfs}
         onClose={() => setExportDialogOpen(false)}
+      />
+
+      <AdvancedSelectDialog
+        open={advancedSelectOpen}
+        sourcePages={sourcePages}
+        onClose={() => setAdvancedSelectOpen(false)}
+        onSelect={(pageIds) => setSelectedSourcePageIds(pageIds)}
       />
     </main>
   );
