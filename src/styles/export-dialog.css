@@ -242,9 +242,73 @@
 }
 
 .export-dialog-file-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.82rem;
   font-weight: 500;
   color: #1f2937;
+}
+
+.export-dialog-file-name-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.export-dialog-file-edit-btn {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4px;
+  color: #b0b7c3;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s, background 0.12s;
+}
+
+.export-dialog-file-item:hover .export-dialog-file-edit-btn {
+  opacity: 1;
+}
+
+.export-dialog-file-edit-btn:hover:not(:disabled) {
+  color: #4b5563;
+  background: #e5e7eb;
+}
+
+.export-dialog-file-edit-btn:disabled {
+  opacity: 0;
+  cursor: default;
+}
+
+.export-dialog-file-edit-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.export-dialog-file-name-input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #1f75e2;
+  border-radius: 5px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: #1f2937;
+  background: #ffffff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(31, 117, 226, 0.12);
+  box-sizing: border-box;
 }
 
 .export-dialog-file-pages {

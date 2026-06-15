@@ -442,6 +442,50 @@ function App() {
     [activeExportFileId, exportFiles],
   );
 
+  const renameExportFile = useCallback(
+    (fileId: string, newName: string) => {
+      const trimmed = newName.trim();
+
+      if (!trimmed) return;
+
+      const targetFile = exportFiles.find((file) => file.id === fileId);
+
+      if (!targetFile || targetFile.name === trimmed) return;
+
+      // Resolve duplicate: if another file already has this name, append suffix
+      let resolvedName = trimmed;
+      const otherNames = exportFiles
+        .filter((file) => file.id !== fileId)
+        .map((file) => file.name);
+
+      if (otherNames.includes(resolvedName)) {
+        // Split into base name + extension
+        const dotIndex = resolvedName.lastIndexOf(".");
+        const base = dotIndex > 0 ? resolvedName.slice(0, dotIndex) : resolvedName;
+        const ext = dotIndex > 0 ? resolvedName.slice(dotIndex) : "";
+
+        let counter = 1;
+        do {
+          resolvedName = `${base}_${counter}${ext}`;
+          counter += 1;
+        } while (otherNames.includes(resolvedName));
+      }
+
+      setExportFiles((current) =>
+        current.map((file) =>
+          file.id === fileId ? { ...file, name: resolvedName } : file,
+        ),
+      );
+      setCompletionSnapshot(null);
+      setStatusMessage(
+        resolvedName !== trimmed
+          ? `已将 ${targetFile.name} 重命名为 ${resolvedName}（原名已被占用，自动添加后缀）`
+          : `已将 ${targetFile.name} 重命名为 ${resolvedName}`,
+      );
+    },
+    [exportFiles],
+  );
+
   const deleteImportedPdf = useCallback(
     (documentId: string) => {
       const removedPdf = importedPdfs.find((pdf) => pdf.id === documentId);
@@ -818,6 +862,7 @@ function App() {
         exportFiles={exportFiles}
         importedPdfs={importedPdfs}
         onClose={() => setExportDialogOpen(false)}
+        onRenameExportFile={renameExportFile}
       />
 
       <AdvancedSelectDialog

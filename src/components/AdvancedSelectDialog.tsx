@@ -1,5 +1,5 @@
-import { ListFilter, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Hash, ListFilter, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { SourcePage } from "@/types/pdf-workspace";
 import "@/styles/advanced-select-dialog.css";
@@ -11,21 +11,34 @@ type AdvancedSelectDialogProps = {
   onSelect: (pageIds: string[]) => void;
 };
 
+type ParsedRange = {
+  raw: string;
+  from: number;
+  to: number;
+  count: number;
+};
+
+type ParseResult =
+  | { ok: true; ranges: ParsedRange[]; pageNumbers: number[] }
+  | { ok: false; ranges: ParsedRange[]; error: string };
+
 /**
  * Parse a range input string like "9-11,13-15" or "9-11，13-15"
- * Returns an array of page numbers (1-based).
+ * Returns structured range info and a flat list of page numbers.
  */
-function parseRangeInput(input: string): number[] {
-  // Normalize Chinese commas to English commas
+function parseRangeInput(input: string, maxPage: number): ParseResult {
   const normalized = input.replace(/，/g, ",");
-
-  // Split by comma, trim each part
   const parts = normalized.split(",").map((s) => s.trim()).filter(Boolean);
 
-  const pageNumbers = new Set<number>();
+  if (parts.length === 0) {
+    return { ok: false, ranges: [], error: "" };
+  }
+
+  const ranges: ParsedRange[] = [];
+  const pageNumberSet = new Set<number>();
+  const errors: string[] = [];
 
   for (const part of parts) {
-    // Match patterns: "5", "9-11"
     const rangeMatch = part.match(/^(\d+)\s*-\s*(\d+)$/);
     const singleMatch = part.match(/^(\d+)$/);
 
@@ -33,25 +46,56 @@ function parseRangeInput(input: string): number[] {
       const start = parseInt(rangeMatch[1], 10);
       const end = parseInt(rangeMatch[2], 10);
 
-      if (start < 1 || end < 1) continue;
+      if (start < 1 || end < 1) {
+        errors.push(`"${part}" 页码必须为正数`);
+        continue;
+      }
 
       const from = Math.min(start, end);
       const to = Math.max(start, end);
 
-      for (let i = from; i <= to; i++) {
-        pageNumbers.add(i);
+      if (from > maxPage) {
+        errors.push(`"${part}" 超出页码范围（最大 ${maxPage}）`);
+        continue;
+      }
+
+      const clampedTo = Math.min(to, maxPage);
+      ranges.push({ raw: part, from, to: clampedTo, count: clampedTo - from + 1 });
+
+      for (let i = from; i <= clampedTo; i++) {
+        pageNumberSet.add(i);
       }
     } else if (singleMatch) {
       const num = parseInt(singleMatch[1], 10);
 
-      if (num >= 1) {
-        pageNumbers.add(num);
+      if (num < 1) {
+        errors.push(`"${part}" 页码必须为正数`);
+        continue;
       }
+
+      if (num > maxPage) {
+        errors.push(`"${part}" 超出页码范围（最大 ${maxPage}）`);
+        continue;
+      }
+
+      ranges.push({ raw: part, from: num, to: num, count: 1 });
+      pageNumberSet.add(num);
+    } else {
+      errors.push(`"${part}" 格式无效`);
     }
-    // Invalid patterns are silently ignored
   }
 
-  return Array.from(pageNumbers).sort((a, b) => a - b);
+  const pageNumbers = Array.from(pageNumberSet).sort((a, b) => a - b);
+
+  if (ranges.length === 0) {
+    return { ok: false, ranges: [], error: errors.join("；") || "请输入有效的页码范围" };
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, ranges, error: errors.join("；") };
+  }
+
+  return { ok: true, ranges, pageNumbers };
 }
 
 export function AdvancedSelectDialog({
@@ -61,18 +105,13 @@ export function AdvancedSelectDialog({
   onSelect,
 }: AdvancedSelectDialogProps) {
   const [inputValue, setInputValue] = useState("");
-  const [error, setError] = useState("");
-  const [previewText, setPreviewText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Reset state when dialog opens
   useEffect(() => {
     if (open) {
       setInputValue("");
-      setError("");
-      setPreviewText("");
 
-      // Focus input after animation
       const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
@@ -82,57 +121,18 @@ export function AdvancedSelectDialog({
 
   const maxPage = sourcePages.length;
 
-  const handleInputChange = useCallback(
-    (value: string) => {
-      setInputValue(value);
-
-      if (!value.trim()) {
-        setError("");
-        setPreviewText("");
-        return;
-      }
-
-      const pageNumbers = parseRangeInput(value);
-
-      if (pageNumbers.length === 0) {
-        setError("请输入有效的页码范围，如 9-11 或 9-11,13-15");
-        setPreviewText("");
-        return;
-      }
-
-      // Check for out-of-range pages
-      const outOfRange = pageNumbers.filter((n) => n > maxPage);
-
-      if (outOfRange.length > 0) {
-        setError(`页码 ${outOfRange.join(", ")} 超出范围（当前共 ${maxPage} 页）`);
-        setPreviewText("");
-        return;
-      }
-
-      setError("");
-
-      // Build preview text
-      if (pageNumbers.length <= 10) {
-        setPreviewText(`将选择第 ${pageNumbers.join(", ")} 页，共 ${pageNumbers.length} 页`);
-      } else {
-        const firstFew = pageNumbers.slice(0, 5).join(", ");
-        setPreviewText(`将选择第 ${firstFew}... 等 ${pageNumbers.length} 页`);
-      }
-    },
-    [maxPage],
+  const parseResult = useMemo(
+    () => (inputValue.trim() ? parseRangeInput(inputValue, maxPage) : null),
+    [inputValue, maxPage],
   );
 
+  const totalPages = parseResult?.ok ? parseResult.pageNumbers.length : 0;
+
   const handleConfirm = useCallback(() => {
-    if (!inputValue.trim() || error) return;
+    if (!parseResult?.ok) return;
 
-    const pageNumbers = parseRangeInput(inputValue);
-
-    if (pageNumbers.length === 0) return;
-
-    // Map page numbers (1-based) to source page IDs
-    const selectedIds = pageNumbers
+    const selectedIds = parseResult.pageNumbers
       .map((pageNum) => {
-        // sourcePages is 0-indexed, pageNum is 1-based
         const page = sourcePages[pageNum - 1];
         return page?.id ?? null;
       })
@@ -143,7 +143,7 @@ export function AdvancedSelectDialog({
     }
 
     onClose();
-  }, [inputValue, error, sourcePages, onSelect, onClose]);
+  }, [parseResult, sourcePages, onSelect, onClose]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -186,37 +186,65 @@ export function AdvancedSelectDialog({
 
         {/* Body */}
         <div className="advanced-select-body">
+          {/* Input */}
           <label className="advanced-select-label" htmlFor="advanced-select-input">
             页码范围
           </label>
           <input
             ref={inputRef}
             id="advanced-select-input"
-            className={error ? "advanced-select-input advanced-select-input-error" : "advanced-select-input"}
+            className={
+              parseResult && !parseResult.ok && parseResult.error
+                ? "advanced-select-input advanced-select-input-error"
+                : "advanced-select-input"
+            }
             type="text"
             value={inputValue}
-            onChange={(e) => handleInputChange(e.target.value)}
+            onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="如 9-11,13-15（支持中英文逗号分隔）"
+            placeholder="如 9-11, 13-15"
             autoComplete="off"
             spellCheck={false}
           />
           <p className="advanced-select-hint">
-            支持格式：单页 <code>5</code>、范围 <code>9-11</code>、多个用逗号分隔 <code>9-11,13-15</code>
+            多个范围用逗号分隔，支持中英文逗号
           </p>
 
-          {error && (
+          {/* Error */}
+          {parseResult && !parseResult.ok && parseResult.error && (
             <div className="advanced-select-error">
-              {error}
+              {parseResult.error}
             </div>
           )}
 
-          {previewText && !error && (
-            <div className="advanced-select-preview">
-              {previewText}
+          {/* Range rows */}
+          {parseResult && parseResult.ranges.length > 0 && (
+            <div className="advanced-select-ranges">
+              <div className="advanced-select-ranges-header">
+                <span>已解析范围</span>
+                <span className="advanced-select-ranges-count">
+                  共 {totalPages} 页
+                </span>
+              </div>
+              <div className="advanced-select-range-list">
+                {parseResult.ranges.map((range, i) => (
+                  <div key={i} className="advanced-select-range-row">
+                    <Hash className="advanced-select-range-icon" aria-hidden="true" />
+                    <span className="advanced-select-range-label">
+                      {range.from === range.to
+                        ? `第 ${range.from} 页`
+                        : `第 ${range.from}-${range.to} 页`}
+                    </span>
+                    <span className="advanced-select-range-count">
+                      {range.count} 页
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
+          {/* Page info */}
           <div className="advanced-select-info">
             当前文件共 <strong>{maxPage}</strong> 页
           </div>
@@ -230,9 +258,9 @@ export function AdvancedSelectDialog({
           <Button
             className="advanced-select-confirm-btn"
             onClick={handleConfirm}
-            disabled={!inputValue.trim() || Boolean(error)}
+            disabled={!parseResult?.ok}
           >
-            选择
+            选择 {totalPages > 0 ? `${totalPages} 页` : ""}
           </Button>
         </div>
       </div>

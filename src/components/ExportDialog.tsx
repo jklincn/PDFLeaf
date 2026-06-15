@@ -4,13 +4,13 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
   AlertTriangle,
   CheckCircle2,
-  ChevronRight,
   FileOutput,
   FolderOpen,
   Loader2,
+  Pencil,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { buildPdfExportJob } from "@/lib/pdf-export";
@@ -37,13 +37,108 @@ type ExportDialogProps = {
   exportFiles: ExportFile[];
   importedPdfs: ImportedPdf[];
   onClose: () => void;
+  onRenameExportFile: (fileId: string, newName: string) => void;
 };
+
+function EditableFileName({
+  fileId,
+  name,
+  disabled,
+  onRename,
+}: {
+  fileId: string;
+  name: string;
+  disabled: boolean;
+  onRename: (fileId: string, newName: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync draft when name changes externally
+  useEffect(() => {
+    if (!editing) {
+      setDraft(name);
+    }
+  }, [name, editing]);
+
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  const commit = useCallback(() => {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== name) {
+      onRename(fileId, trimmed);
+    } else {
+      setDraft(name);
+    }
+    setEditing(false);
+  }, [draft, name, fileId, onRename]);
+
+  const cancel = useCallback(() => {
+    setDraft(name);
+    setEditing(false);
+  }, [name]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commit();
+      } else if (e.key === "Escape") {
+        cancel();
+      }
+    },
+    [commit, cancel],
+  );
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        className="export-dialog-file-name-input"
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={handleKeyDown}
+        disabled={disabled}
+        onClick={(e) => e.stopPropagation()}
+      />
+    );
+  }
+
+  return (
+    <span className="export-dialog-file-name">
+      <span className="export-dialog-file-name-text">{name}</span>
+      <button
+        type="button"
+        className="export-dialog-file-edit-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          setEditing(true);
+        }}
+        disabled={disabled}
+        aria-label={`重命名 ${name}`}
+        title="点击编辑文件名"
+      >
+        <Pencil aria-hidden="true" />
+      </button>
+    </span>
+  );
+}
 
 export function ExportDialog({
   open,
   exportFiles,
   importedPdfs,
   onClose,
+  onRenameExportFile,
 }: ExportDialogProps) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [outputDir, setOutputDir] = useState("");
@@ -114,6 +209,7 @@ export function ExportDialog({
 
   const nonEmptyFiles = exportFiles.filter((f) => f.pages.length > 0);
   const totalPages = nonEmptyFiles.reduce((sum, f) => sum + f.pages.length, 0);
+  const isExporting = phase === "exporting";
 
   if (!open) return null;
 
@@ -137,7 +233,7 @@ export function ExportDialog({
             className="export-dialog-close"
             onClick={onClose}
             aria-label="关闭"
-            disabled={phase === "exporting"}
+            disabled={isExporting}
           >
             <X aria-hidden="true" />
           </button>
@@ -157,7 +253,7 @@ export function ExportDialog({
               type="button"
               className="export-dialog-change-btn"
               onClick={handleChooseDir}
-              disabled={phase === "exporting"}
+              disabled={isExporting}
             >
               更改
             </button>
@@ -178,7 +274,12 @@ export function ExportDialog({
             <div className="export-dialog-file-items">
               {nonEmptyFiles.map((file) => (
                 <div key={file.id} className="export-dialog-file-item">
-                  <span className="export-dialog-file-name">{file.name}</span>
+                  <EditableFileName
+                    fileId={file.id}
+                    name={file.name}
+                    disabled={isExporting}
+                    onRename={onRenameExportFile}
+                  />
                   <span className="export-dialog-file-pages">
                     {file.pages.length} 页
                   </span>
@@ -248,7 +349,6 @@ export function ExportDialog({
               disabled={!outputDir || nonEmptyFiles.length === 0}
             >
               导出
-              <ChevronRight aria-hidden="true" />
             </Button>
           )}
 
