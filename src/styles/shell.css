@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #eef1f5;
+  background: var(--app-bg);
 }
 
 .app-topbar {
@@ -15,9 +15,9 @@
   justify-content: space-between;
   gap: 0;
   padding: 0 0 0 14px;
-  border-bottom: 1px solid #111820;
-  color: #f8fafc;
-  background: linear-gradient(180deg, #20272f 0%, #171d23 100%);
+  border-bottom: 1px solid var(--chrome-border);
+  color: var(--chrome-text);
+  background: var(--chrome-bg);
   user-select: none;
 }
 
@@ -61,12 +61,12 @@
   border-radius: 0;
   color: #d9e2ec;
   background: transparent;
-  cursor: default;
+  cursor: pointer;
 }
 
 .window-control-button:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--chrome-bg-hover);
 }
 
 .window-control-button:focus-visible {
@@ -82,7 +82,7 @@
 
 .window-control-close:hover {
   color: #ffffff;
-  background: #c42b1c;
+  background: var(--danger);
 }
 
 

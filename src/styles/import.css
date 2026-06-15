@@ -11,15 +11,15 @@
 .import-progress-dialog {
   width: 400px;
   padding: 32px 40px;
-  border-radius: 10px;
-  background: #ffffff;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-dialog);
   text-align: center;
 }
 
 .import-progress-label {
   margin-bottom: 20px;
-  color: #1c232b;
+  color: var(--text);
   font-size: 1.2rem;
   font-weight: 700;
 }
@@ -34,13 +34,13 @@
 .import-progress-fill {
   height: 100%;
   border-radius: 5px;
-  background: #1f75e2;
+  background: var(--accent);
   transition: width 0.25s ease;
 }
 
 .import-progress-info {
   margin-top: 14px;
-  color: #586574;
+  color: var(--text-muted);
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
 }
@@ -51,8 +51,8 @@
   display: flex;
   flex-direction: column;
   color: #e5edf7;
-  background: linear-gradient(180deg, #28323c 0%, #1f2933 100%);
-  border-right: 1px solid #c9d0d8;
+  background: var(--chrome-bg);
+  border-right: 1px solid var(--chrome-border);
 }
 
 .rail-heading {
@@ -64,13 +64,18 @@
   gap: 10px;
   padding: 0 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
+  color: var(--chrome-text);
   font-size: 0.9rem;
   font-weight: 700;
 }
 
 .rail-heading .inline-flex {
   color: #dce7f3;
+}
+
+.rail-heading .inline-flex:hover:not(:disabled) {
+  color: var(--chrome-text);
+  background: var(--chrome-bg-hover);
 }
 
 .file-list {
@@ -97,18 +102,22 @@
 }
 
 .file-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .file-item-active {
-  border-left-color: #1f75e2;
-  background: rgba(255, 255, 255, 0.06);
+  border-left-color: var(--accent);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.file-item-active:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .file-item svg {
   width: 28px;
   height: 28px;
-  color: #f45b69;
+  color: #cfd8e3;
 }
 
 .file-item > div {
@@ -118,7 +127,7 @@
 .file-item strong {
   display: block;
   overflow: visible;
-  color: #f8fafc;
+  color: var(--chrome-text);
   font-size: 0.9rem;
   line-height: 1.24;
   overflow-wrap: normal;
@@ -130,7 +139,7 @@
 .file-item > div > span {
   display: block;
   margin-top: 3px;
-  color: #aab7c4;
+  color: var(--chrome-muted);
   font-size: 0.8rem;
 }
 
@@ -144,7 +153,7 @@
   justify-content: center;
   gap: 9px;
   border: 1px dashed rgba(228, 236, 246, 0.38);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   color: #dce7f3;
   background: transparent;
 }

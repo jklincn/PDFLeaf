@@ -1,12 +1,38 @@
 ﻿:root {
+  --app-bg: #eef1f5;
+  --surface: #fbfcfe;
+  --surface-strong: #ffffff;
+  --surface-muted: #f6f8fb;
+  --border: #d8dee7;
+  --border-soft: #e7ebf1;
+  --text: #17202a;
+  --text-muted: #64707d;
+  --text-subtle: #8a96a5;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #eff6ff;
+  --accent-border: #9bbce8;
+  --danger: #c42b1c;
+  --chrome-bg: #20262d;
+  --chrome-bg-hover: #2b333d;
+  --chrome-border: #151b22;
+  --chrome-text: #f8fafc;
+  --chrome-muted: #aab7c4;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --shadow-subtle: 0 1px 2px rgba(18, 28, 40, 0.07);
+  --shadow-hover: 0 4px 12px rgba(37, 99, 235, 0.12);
+  --shadow-dialog: 0 20px 50px rgba(15, 23, 42, 0.16);
+
   font-family:
     Inter, "Microsoft YaHei", "PingFang SC", ui-sans-serif, system-ui,
     -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.5;
   font-weight: 400;
-  color: #16191d;
-  background: #f2f4f7;
+  color: var(--text);
+  background: var(--app-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

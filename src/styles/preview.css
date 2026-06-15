@@ -15,10 +15,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #0d1116;
-  border-radius: 4px;
-  background: #20252b;
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.36);
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--radius-md);
+  background: var(--chrome-bg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.32);
 }
 
 .preview-toolbar button {
@@ -28,13 +28,13 @@
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   color: #e5edf7;
   background: transparent;
 }
 
 .preview-toolbar button:hover:not(:disabled) {
-  background: #343c46;
+  background: var(--chrome-bg-hover);
 }
 
 .preview-toolbar svg {
@@ -49,8 +49,8 @@
   align-items: center;
   padding: 6px 12px;
   color: #e7edf5;
-  background: #2a3139;
-  border-bottom: 1px solid #171d24;
+  background: var(--chrome-bg);
+  border-bottom: 1px solid var(--chrome-border);
 }
 
 .preview-toolbar-left {
@@ -76,7 +76,7 @@
   width: 118px;
   height: 30px;
   border-color: #454f5a;
-  color: #f8fafc;
+  color: var(--chrome-text);
   background: #20262d;
 }
 
@@ -100,14 +100,14 @@
   flex: 1;
   overflow: auto;
   padding: 28px;
-  background: #565d66;
+  background: #555d66;
 }
 
 .preview-canvas-wrap canvas {
   display: block;
   margin: 0 auto;
   background: #ffffff;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
 }
 
 .preview-error {
