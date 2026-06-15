@@ -1,3 +1,18 @@
 # PDFLeaf
 
-A lightweight Tauri PDF page editor.
+PDFLeaf 是一个轻量级的桌面 PDF 页面编辑工具。
+
+## 功能
+
+- **导入与选取** — 导入多个 PDF，跨文件自由选取页面，全选或按范围（如 9-11, 13-15）快速选择
+- **组合与分割** — 将选中页面输出为一个或多个 PDF，一次完成合并与分割
+- **页面编辑** — 拖拽排序、旋转页面、移除页面，所见即所得
+
+## 技术栈
+
+- Tauri 2
+- React
+- TypeScript
+- Vite
+- pdf.js
+- qpdf
