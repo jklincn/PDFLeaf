@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt;
 use std::path::Path;
+use tauri::AppHandle;
+use tauri_plugin_shell::ShellExt;
 
 // ── Data structures ──────────────────────────────────────────────
 
@@ -346,29 +348,75 @@ fn normalize_path(path: &str) -> String {
 
 // ── qpdf invocation ───────────────────────────────────────────────
 
-/// 获取 qpdf sidecar 的完整路径。
-/// 开发时 sidecar 在 src-tauri/binaries/ 下，打包后与可执行文件同目录。
-fn qpdf_sidecar_path() -> std::path::PathBuf {
-    // 优先检查 exe 旁边的路径（打包环境）
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            let candidate = dir.join("qpdf-x86_64-pc-windows-msvc.exe");
-            if candidate.exists() {
-                return candidate;
-            }
-        }
+fn qpdf_child_path_env() -> Result<std::ffi::OsString, ExportError> {
+    let exe = std::env::current_exe().map_err(|e| ExportError {
+        code: "QPDF_PATH_FAILED".into(),
+        message: format!("无法定位当前程序路径: {}", e),
+        output_id: None,
+        page_id: None,
+        details: None,
+    })?;
+
+    let app_dir = exe.parent().ok_or_else(|| ExportError {
+        code: "QPDF_PATH_FAILED".into(),
+        message: "无法定位当前程序所在目录".into(),
+        output_id: None,
+        page_id: None,
+        details: None,
+    })?;
+
+    let original_path = std::env::var_os("PATH").unwrap_or_default();
+    let mut path_entries = vec![app_dir.join("binaries")];
+    path_entries.extend(std::env::split_paths(&original_path));
+    std::env::join_paths(path_entries).map_err(|e| ExportError {
+        code: "QPDF_PATH_FAILED".into(),
+        message: format!("无法构造 qpdf 运行环境: {}", e),
+        output_id: None,
+        page_id: None,
+        details: None,
+    })
+}
+
+fn run_qpdf(app: &AppHandle, args: &[&str]) -> Result<(), ExportError> {
+    let child_path = qpdf_child_path_env()?;
+    let command = app
+        .shell()
+        .sidecar("qpdf")
+        .map_err(|e| ExportError {
+            code: "QPDF_EXEC_FAILED".into(),
+            message: format!("无法创建 qpdf sidecar: {}", e),
+            output_id: None,
+            page_id: None,
+            details: None,
+        })?;
+
+    let output = tauri::async_runtime::block_on(async {
+        command
+            .args(args.iter().copied())
+            .env("PATH", child_path)
+            .output()
+            .await
+    })
+    .map_err(|e| ExportError {
+        code: "QPDF_EXEC_FAILED".into(),
+        message: format!("无法执行 qpdf sidecar: {}", e),
+        output_id: None,
+        page_id: None,
+        details: None,
+    })?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(ExportError {
+            code: "QPDF_ERROR".into(),
+            message: format!("qpdf 执行失败 (exit code: {:?})", output.status.code()),
+            output_id: None,
+            page_id: None,
+            details: Some(stderr.trim().to_string()),
+        });
     }
 
-    // 开发环境：src-tauri/binaries/
-    let dev_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("binaries")
-        .join("qpdf-x86_64-pc-windows-msvc.exe");
-    if dev_path.exists() {
-        return dev_path;
-    }
-
-    // 最后尝试当前工作目录
-    std::path::PathBuf::from("qpdf-x86_64-pc-windows-msvc.exe")
+    Ok(())
 }
 
 fn resolve_output_path(path: &str, policy: &OverwritePolicy) -> Result<String, ExportError> {
@@ -415,35 +463,8 @@ fn resolve_output_path(path: &str, policy: &OverwritePolicy) -> Result<String, E
     }
 }
 
-fn run_qpdf(args: &[&str]) -> Result<(), ExportError> {
-    let sidecar_path = qpdf_sidecar_path();
-
-    let output = std::process::Command::new(&sidecar_path)
-        .args(args)
-        .output()
-        .map_err(|e| ExportError {
-            code: "QPDF_EXEC_FAILED".into(),
-            message: format!("无法执行 qpdf ({:?}): {}", sidecar_path, e),
-            output_id: None,
-            page_id: None,
-            details: None,
-        })?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(ExportError {
-            code: "QPDF_ERROR".into(),
-            message: format!("qpdf 执行失败 (exit code: {:?})", output.status.code()),
-            output_id: None,
-            page_id: None,
-            details: Some(stderr.trim().to_string()),
-        });
-    }
-
-    Ok(())
-}
-
 fn export_single_output(
+    app: &AppHandle,
     output: &OutputDocument,
     sources: &[SourceDocument],
     options: &Option<ExportDocumentOptions>,
@@ -493,9 +514,9 @@ fn export_single_output(
         .any(|p| p.transform.as_ref().and_then(|t| t.rotate).unwrap_or(0) != 0);
 
     if has_rotation {
-        export_with_rotation(output, sources, &output_path)?;
+        export_with_rotation(app, output, sources, &output_path)?;
     } else {
-        export_simple(output, sources, &output_path)?;
+        export_simple(app, output, sources, &output_path)?;
     }
 
     Ok(ExportedFile {
@@ -506,6 +527,7 @@ fn export_single_output(
 }
 
 fn export_simple(
+    app: &AppHandle,
     output: &OutputDocument,
     sources: &[SourceDocument],
     output_path: &str,
@@ -522,10 +544,11 @@ fn export_simple(
     args.push(output_path.to_string());
 
     let args_ref: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-    run_qpdf(&args_ref)
+    run_qpdf(app, &args_ref)
 }
 
 fn export_with_rotation(
+    app: &AppHandle,
     output: &OutputDocument,
     sources: &[SourceDocument],
     output_path: &str,
@@ -545,7 +568,7 @@ fn export_with_rotation(
     assemble_args.push(temp_path.clone());
 
     let args_ref: Vec<&str> = assemble_args.iter().map(|s| s.as_str()).collect();
-    run_qpdf(&args_ref)?;
+    run_qpdf(app, &args_ref)?;
 
     // Step 2: 对指定页面施加旋转
     let mut rotate_specs: Vec<String> = Vec::new();
@@ -566,7 +589,7 @@ fn export_with_rotation(
     rotate_args.push(rotated_temp.clone());
 
     let rotate_refs: Vec<&str> = rotate_args.iter().map(|s| s.as_str()).collect();
-    run_qpdf(&rotate_refs)?;
+    run_qpdf(app, &rotate_refs)?;
     // 拼合后的临时文件可以删除了
     let _ = std::fs::remove_file(&temp_path);
 
@@ -615,7 +638,7 @@ impl From<&ExportJobOptions> for ExportDocumentOptions {
 // ── Tauri command ─────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn export_pdfs(job: PdfExportJob) -> Result<ExportResult, ExportError> {
+pub fn export_pdfs(app: AppHandle, job: PdfExportJob) -> Result<ExportResult, ExportError> {
     let warnings = validate_job(&job);
 
     let has_errors = warnings.iter().any(|w| {
@@ -656,7 +679,7 @@ pub fn export_pdfs(job: PdfExportJob) -> Result<ExportResult, ExportError> {
     let mut export_warnings: Vec<ExportWarning> = warnings;
 
     for output in &job.outputs {
-        match export_single_output(output, &job.sources, &Some(export_options.clone())) {
+        match export_single_output(&app, output, &job.sources, &Some(export_options.clone())) {
             Ok(file) => exported_files.push(file),
             Err(e) => {
                 export_warnings.push(ExportWarning {
